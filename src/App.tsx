@@ -6,43 +6,77 @@ type TData = {
   title: string;
 };
 
-// 카테고리 div onClick 시 오른쪽 전체 DIV내에 제목, 생성버튼이 들어가야함
-// 깃허브 테스트용
+// detail TABLE
+type DetailVO = {
+  detailNo: string;
+  cateNo: string;
+  orderNo: number;
+  content: string;
+  startDt: Date;
+  endDt: Date;
+  regDate: Date;
+  checkYN: string; // default : N
+};
 
 function App() {
   // 타입 설정 및 배열인 경우에는 Tdata[] 이라고 명시해줌
   // 가상DB
   const [datum, setDatum] = useState<TData[]>([]);
+  const [detailTable, setDetailTable] = useState<DetailVO[]>([]);
+
   const [createDatum, setCreateDatum] = useState<TData[]>([]); // 엔터를 누르기 전까지는 input
   const [createInput, setCreateInput] = useState(''); // createInput 값 변경용
   const [createFlag, setCreateFlag] = useState(false); // false : 추가버튼 보임, true : 안보임
   const [createDetailDiv, setCreateDetailDiv] = useState<TData | null>(null);
   const [mdfyCateFlag, setMdfyCateFlag] = useState(true); // true : readonly
 
-  // 카테고리 타이틀 수정
-  const mdfyCateTitleHandler = useCallback((detailVO: TData) => {
-    console.log('수정할 detailVO 확인 >> ', detailVO);
+  // detail
+  const [detailInput, setDetailInput] = useState(''); // 작업추가용 값
 
-    let data = datum ? datum.map((value) => value) : [];
+  // todo 내용 Insert
+  const insertTodoDetailHandler = useCallback(
+    (content: string, cateNo: string) => {
+      let data = detailTable ? detailTable.map((value) => value) : [];
 
-    for (let i = 0; i < data.length; i++) {
-      if (data[i].cateNo == detailVO.cateNo) {
-        console.log(
-          '바뀌기 전 타이틀 >> ',
-          data[i].title,
-          ' 해당 CateNO >> ',
-          data[i].cateNo
-        );
-        data[i].title = detailVO.title;
-        console.log(
-          '바뀌기 후 타이틀 >> ',
-          data[i].title,
-          ' 해당 CateNO >> ',
-          data[i].cateNo
-        );
+      console.log('작업추가 내용 확인 >>', content, 'cateNo >> ', cateNo);
+
+      // 내일 두개 제외 다른 것들 도 연결필요
+
+      if (content != null && content != '') {
+        // data.push({
+        // detailNo: string;
+        // cateNo: string;
+        // orderNo: number;
+        // content: content;
+        // startDt: date
+        // endDt: Date;
+        // regDate: Date;
+        // checkYN: string; // default : N
+        // });
       }
-    }
-  }, []);
+
+      setDetailInput('');
+    },
+    []
+  );
+
+  // 카테고리 타이틀 수정
+  // const mdfyCateTitleHandler = useCallback((detailVO: TData) => {
+  const mdfyCateTitleHandler = useCallback(
+    (detailVO: TData) => {
+      let data = datum ? datum.map((value) => value) : [];
+
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].cateNo == detailVO.cateNo) {
+          data[i].title = detailVO.title;
+        }
+      }
+
+      setDatum(data);
+      // setCreateDetailDiv(data);
+    },
+    [datum]
+  );
 
   // 삭제하기 (data 객체 받을 때 어떤 타입인지 꼭 명시하기)
   const deleteHandler = useCallback(
@@ -227,30 +261,57 @@ function App() {
           }}
         >
           {createDetailDiv && (
-            <div
-              style={{
-                display: `flex`,
-                width: `100%`,
-                height: `10%`,
-                border: `1px solid black`,
-              }}
-            >
-              <input
-                value={createDetailDiv.title}
-                style={{ fontSize: `20px`, width: `100%` }}
-                // onKeyDown={(e) =>
-                //   e.keyCode === 13 && mdfyCateTitleHandler(createDetailDiv)
-                // }
-                // onClick={() => (mdfyCateFlag ? `readonly` : `type='text'`)}
-                readOnly
-              ></input>
-              <button style={{ width: `10%` }}>추가</button>
-              <button
-                style={{ width: `10%` }}
-                onClick={() => deleteHandler(createDetailDiv.cateNo)}
+            <div style={{ flexDirection: `row`, width: `100%` }}>
+              <div
+                style={{
+                  display: `flex`,
+                  width: `100%`,
+                  height: `10%`,
+                  border: `1px solid black`,
+                }}
               >
-                삭제{createDetailDiv.cateNo}
-              </button>
+                <input
+                  value={createDetailDiv.title}
+                  style={{ fontSize: `20px`, width: `100%` }}
+                  // onKeyDown={(e) =>
+                  //   e.keyCode === 13 && mdfyCateTitleHandler(createDetailDiv)
+                  // }
+                  // onClick={() => (mdfyCateFlag ? `readonly` : `type='text'`)}
+                  // onChange={() => (mdfyCateFlag ? `readonly` : `type='text'`)}
+                  onChange={(e) => {
+                    mdfyCateTitleHandler({
+                      cateNo: createDetailDiv.cateNo,
+                      title: e.target.value,
+                    });
+                  }}
+                  // readOnly
+                ></input>
+                <button style={{ width: `10%` }}>추가</button>
+                <button
+                  style={{ width: `10%` }}
+                  onClick={() => deleteHandler(createDetailDiv.cateNo)}
+                >
+                  삭제{createDetailDiv.cateNo}
+                </button>
+              </div>
+              <div style={{ height: `85%` }}> 가운데 내용 자리 </div>
+              <div
+                style={{
+                  width: `100%`,
+                  border: `1px solid black`,
+                }}
+              >
+                <input
+                  placeholder="작업 추가"
+                  style={{ fontSize: `20px`, width: `100%`, height: `20%` }}
+                  value={detailInput}
+                  onChange={(e) => setDetailInput(e.target.value)}
+                  onKeyDown={(e) =>
+                    e.keyCode === 13 &&
+                    insertTodoDetailHandler(detailInput, createDetailDiv.cateNo)
+                  }
+                ></input>
+              </div>
             </div>
           )}
         </div>
