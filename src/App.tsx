@@ -7,7 +7,7 @@ type TData = {
 };
 
 // 카테고리 div onClick 시 오른쪽 전체 DIV내에 제목, 생성버튼이 들어가야함
-//
+// 깃허브 테스트용
 
 function App() {
   // 타입 설정 및 배열인 경우에는 Tdata[] 이라고 명시해줌
