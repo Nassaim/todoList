@@ -12,8 +12,8 @@ type DetailVO = {
   cateNo: string;
   orderNo: number;
   content: string;
-  startDt: Date;
-  endDt: Date;
+  startDt: Date | null;
+  endDt: Date | null;
   regDate: Date;
   checkYN: string; // default : N
 };
@@ -40,24 +40,61 @@ function App() {
 
       console.log('작업추가 내용 확인 >>', content, 'cateNo >> ', cateNo);
 
-      // 내일 두개 제외 다른 것들 도 연결필요
+      // 현재 날짜와 시간을 가져오기
+      let currentDate = new Date();
+      console.log('지금 날짜 >> ', currentDate);
 
-      if (content != null && content != '') {
-        // data.push({
-        // detailNo: string;
-        // cateNo: string;
-        // orderNo: number;
-        // content: content;
-        // startDt: date
-        // endDt: Date;
-        // regDate: Date;
-        // checkYN: string; // default : N
-        // });
+      let detailNoStr = '';
+
+      // 배열 없을 때는 length, 있을 때는 마지막 값의 +1 로 가져와야함
+      if (`${detailTable.length}` == '0') {
+        detailNoStr = `D` + `${datum.length + 1}`.padStart(3, '0');
+      } else {
+        let lastDetailNo = `${
+          detailTable[Number(`${detailTable.length}`) - 1].detailNo
+        }`;
+        lastDetailNo = lastDetailNo.slice(-3, lastDetailNo.length);
+        detailNoStr = `D` + String(Number(lastDetailNo) + 1).padStart(3, '0');
       }
 
+      console.log('detailNoStr 확인 >> ', detailNoStr);
+
+      // orderNo는 0번부터 시작하는데 cateNo로 등록 안되어있으면 0을 있으면 등록된 orderNo를 배열에 담ㅇ ㅏmax값 구하기.
+      let orderNoInt = 0;
+      // 배열 없을 때는 length, 있을 때는 마지막 값의 +1 로 가져와야함
+      if (`${detailTable.length}` == '0') {
+        orderNoInt = 0;
+      } else {
+        // cateNo 해당 orderNo만 담기
+        let cateNoArr = [];
+        for (let i = 0; i < data.length; i++) {
+          if (data[i].cateNo == cateNo) {
+            cateNoArr.push(data[i].orderNo);
+          }
+        }
+        orderNoInt = Math.max(...cateNoArr) + 1; // max + 1
+      }
+      console.log('orderNoInt 확인 >> ', orderNoInt);
+
+      if (content != null && content != '') {
+        data.push({
+          detailNo: detailNoStr,
+          cateNo: cateNo,
+          orderNo: orderNoInt,
+          content: content,
+          startDt: null,
+          endDt: null,
+          regDate: currentDate,
+          checkYN: 'N',
+        });
+      }
+
+      console.log('detail DB data 객체 확인 >> ', data);
+
       setDetailInput('');
+      setDetailTable(data);
     },
-    []
+    [detailTable]
   );
 
   // 카테고리 타이틀 수정
