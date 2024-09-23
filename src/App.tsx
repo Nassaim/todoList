@@ -21,8 +21,9 @@ type DetailVO = {
 function App() {
   // 타입 설정 및 배열인 경우에는 Tdata[] 이라고 명시해줌
   // 가상DB
-  const [datum, setDatum] = useState<TData[]>([]);
-  const [detailTable, setDetailTable] = useState<DetailVO[]>([]);
+  const [datum, setDatum] = useState<TData[]>([]); // 카테고리 DB
+  const [detailTable, setDetailTable] = useState<DetailVO[]>([]); // detail DB
+  const [selCateDetail, setSelCateDetail] = useState<DetailVO[]>([]); // 선택된 데이터
 
   const [createDatum, setCreateDatum] = useState<TData[]>([]); // 엔터를 누르기 전까지는 input
   const [createInput, setCreateInput] = useState(''); // createInput 값 변경용
@@ -33,10 +34,27 @@ function App() {
   // detail
   const [detailInput, setDetailInput] = useState(''); // 작업추가용 값
 
+  // 선택된 데이터만 DB에 저장
+  const selectCateDetailHandler = useCallback(
+    (cateNo: string) => {
+      let data = detailTable ? detailTable.map((value) => value) : [];
+      let selectedData = [];
+
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].cateNo == cateNo) {
+          selectedData.push(data[i]);
+        }
+      }
+      setSelCateDetail(selectedData);
+    },
+    [selCateDetail]
+  );
+
   // todo 내용 Insert
   const insertTodoDetailHandler = useCallback(
     (content: string, cateNo: string) => {
       let data = detailTable ? detailTable.map((value) => value) : [];
+      let selData = selCateDetail ? selCateDetail.map((value) => value) : [];
 
       console.log('작업추가 내용 확인 >>', content, 'cateNo >> ', cateNo);
 
@@ -77,7 +95,7 @@ function App() {
       console.log('orderNoInt 확인 >> ', orderNoInt);
 
       if (content != null && content != '') {
-        data.push({
+        const newTask: DetailVO = {
           detailNo: detailNoStr,
           cateNo: cateNo,
           orderNo: orderNoInt,
@@ -86,15 +104,25 @@ function App() {
           endDt: null,
           regDate: currentDate,
           checkYN: 'N',
-        });
+        };
+
+        data.push(newTask);
+        selData.push(newTask);
+
+        /*
+          1. DetailDB
+          2. 해당 cateNo에 해당하는 detail만 select DB 필요
+          3. insert시 detailDB랑 해당 cateNo에 해당하는 select DB에도 값 insert 
+        */
       }
 
       console.log('detail DB data 객체 확인 >> ', data);
 
       setDetailInput('');
       setDetailTable(data);
+      setSelCateDetail(selData);
     },
-    [detailTable]
+    [detailTable, selCateDetail]
   );
 
   // 카테고리 타이틀 수정
@@ -147,10 +175,18 @@ function App() {
 
       // console.log('showDetailHandler의 data 확인 > ', data.title);
 
+      // 선택된 db 초기화
+      setSelCateDetail([]);
+      console.log(
+        '왼쪾 카테고리 div 선택 시 초기화 됏느지 확인 >> ',
+        selCateDetail
+      );
+
       setCreateDetailDiv(data);
-      // setCreateDetailDiv([]);
+      // 여기
+      selectCateDetailHandler(data.cateNo);
     },
-    [datum]
+    [datum, selCateDetail]
   );
 
   // 실제 DB 저장하기
@@ -331,7 +367,36 @@ function App() {
                   삭제{createDetailDiv.cateNo}
                 </button>
               </div>
-              <div style={{ height: `85%` }}> 가운데 내용 자리 </div>
+              <div style={{ height: `85%` }}>
+                {' '}
+                <span>[미완료]</span>
+                {selCateDetail.map((data, idx) => {
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: `10px`,
+                        height: `80px`,
+                        width: `100%`,
+                        border: `1px solid #808080`,
+                        margin: `0 0 10px`,
+                      }}
+                      // onClick={() => showDetailHandler(idx)}
+                    >
+                      {/* checkbox 상태 변화 시 해당 cateNo YN -> Y로 변경 
+                          div클릭 시 상세 div 오른쪽에서 등장
+                          오른쪽에서 내용 수정
+                          오른쪽에서 삭제
+
+                          checkbox 변화에 따라 아래쪽 완료 div로 이동 풀면 -> 다시 위로 이동
+
+                      */}
+                      <input type="checkbox"></input>
+                      {data.content}
+                    </div>
+                  );
+                })}
+              </div>
               <div
                 style={{
                   width: `100%`,
