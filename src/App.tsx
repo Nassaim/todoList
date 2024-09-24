@@ -22,20 +22,70 @@ function App() {
   // 타입 설정 및 배열인 경우에는 Tdata[] 이라고 명시해줌
   // 가상DB
   const [datum, setDatum] = useState<TData[]>([]); // 카테고리 DB
-  const [detailTable, setDetailTable] = useState<DetailVO[]>([]); // detail DB
-  const [selCateDetail, setSelCateDetail] = useState<DetailVO[]>([]); // 선택된 데이터
+  const [detailTable, setDetailTable] = useState<DetailVO[]>([]); // 작업 DB DB
+  const [selCateDetail, setSelCateDetail] = useState<DetailVO[]>([]); // 선택된 카테고리에 해당하는 작업만 select
 
   const [createDatum, setCreateDatum] = useState<TData[]>([]); // 엔터를 누르기 전까지는 input
   const [createInput, setCreateInput] = useState(''); // createInput 값 변경용
   const [createFlag, setCreateFlag] = useState(false); // false : 추가버튼 보임, true : 안보임
   const [createDetailDiv, setCreateDetailDiv] = useState<TData | null>(null);
-  const [mdfyCateFlag, setMdfyCateFlag] = useState(true); // true : readonly
 
-  // detail
-  const [detailInput, setDetailInput] = useState(''); // 작업추가용 값
+  // task
+  const [taskInput, setTaskInput] = useState(''); // 작업추가용 값
+
+  const [detailInput, setDetailInput] = useState(''); // detail수정용 값
+  const [showTaskDetailFlag, setShowTaskDetailFlag] = useState(false); // true : 보임 / false : 안보임
+  const [createTaskDetailDiv, setCreateTaskDetailDiv] =
+    useState<DetailVO | null>(null);
+
+  // 작업내용 수정
+  const mdfyTaskContentHandler = useCallback(
+    (detailNo: string, orderNo: number, content: string) => {
+      let data = detailTable ? detailTable.map((value) => value) : [];
+
+      for (let i = 0; i < data.length; i++) {
+        if (data[i].detailNo == detailNo && data[i].orderNo == orderNo) {
+          data[i].content = content;
+        }
+      }
+
+      setDetailTable(data);
+      // setCreateDetailDiv(data);
+    },
+    [detailTable]
+  );
+
+  const showDetailHandler = useCallback(
+    (detailNo: string, orderNo: number) => {
+      // 해당 detailNo와 orderNo가 매칭하는 데이터 골라서 상세에 넣기
+
+      setCreateTaskDetailDiv(null);
+
+      console.log('내가고른 task 정보 >> ', detailNo, ' , ', orderNo);
+      let data = detailTable ? detailTable.map((value) => value) : [];
+      // let taskDetailVO = [];
+
+      for (let i = 0; i < data.length; i++) {
+        if (
+          detailTable[i].detailNo == detailNo &&
+          detailTable[i].orderNo == orderNo
+        ) {
+          // taskDetailVO.push(detailTable[i]);
+          setCreateTaskDetailDiv(detailTable[i]);
+        }
+      }
+
+      console.log('누른 detail상세 확인 >> ', createTaskDetailDiv);
+
+      // setDetailInput(taskDetailVO.)// 여기에 제목만 넣기
+
+      setShowTaskDetailFlag(true);
+    },
+    [detailTable, createTaskDetailDiv]
+  );
 
   // 선택된 데이터만 DB에 저장
-  const selectCateDetailHandler = useCallback(
+  const selectTaskHandler = useCallback(
     (cateNo: string) => {
       let data = detailTable ? detailTable.map((value) => value) : [];
       let selectedData = [];
@@ -118,7 +168,7 @@ function App() {
 
       console.log('detail DB data 객체 확인 >> ', data);
 
-      setDetailInput('');
+      setTaskInput('');
       setDetailTable(data);
       setSelCateDetail(selData);
     },
@@ -167,13 +217,11 @@ function App() {
     [datum]
   );
 
-  const showDetailHandler = useCallback(
+  const showTaskHandler = useCallback(
     (idx: number) => {
-      console.log('showDetailHandler 클릭 >> ', idx);
+      console.log('showTaskHandler 클릭 >> ', idx);
       // let data = datum ? datum.map((value) => value) : [];
       let data = datum[idx];
-
-      // console.log('showDetailHandler의 data 확인 > ', data.title);
 
       // 선택된 db 초기화
       setSelCateDetail([]);
@@ -183,8 +231,7 @@ function App() {
       );
 
       setCreateDetailDiv(data);
-      // 여기
-      selectCateDetailHandler(data.cateNo);
+      selectTaskHandler(data.cateNo);
     },
     [datum, selCateDetail]
   );
@@ -282,7 +329,7 @@ function App() {
                     margin: `0 0 10px`,
                   }}
                   // onClick={() => deleteHandler(idx)}
-                  onClick={() => showDetailHandler(idx)}
+                  onClick={() => showTaskHandler(idx)}
                 >
                   {data.title}
                 </div>
@@ -346,18 +393,12 @@ function App() {
                 <input
                   value={createDetailDiv.title}
                   style={{ fontSize: `20px`, width: `100%` }}
-                  // onKeyDown={(e) =>
-                  //   e.keyCode === 13 && mdfyCateTitleHandler(createDetailDiv)
-                  // }
-                  // onClick={() => (mdfyCateFlag ? `readonly` : `type='text'`)}
-                  // onChange={() => (mdfyCateFlag ? `readonly` : `type='text'`)}
                   onChange={(e) => {
                     mdfyCateTitleHandler({
                       cateNo: createDetailDiv.cateNo,
                       title: e.target.value,
                     });
                   }}
-                  // readOnly
                 ></input>
                 <button style={{ width: `10%` }}>추가</button>
                 <button
@@ -381,11 +422,14 @@ function App() {
                         border: `1px solid #808080`,
                         margin: `0 0 10px`,
                       }}
-                      // onClick={() => showDetailHandler(idx)}
+                      onClick={() =>
+                        showDetailHandler(data.detailNo, data.orderNo)
+                      }
                     >
-                      {/* checkbox 상태 변화 시 해당 cateNo YN -> Y로 변경 
-                          div클릭 시 상세 div 오른쪽에서 등장
-                          오른쪽에서 내용 수정
+                      {/* 카테고리 삭제 시 detailDB에서도 cateNo해당 데이터 삭제
+                          checkbox 상태 변화 시 해당 cateNo YN -> Y로 변경 
+                          div클릭 시 상세 div 오른쪽에서 등장 (ㅇ)
+                          오른쪽에서 내용 수정 
                           오른쪽에서 삭제
 
                           checkbox 변화에 따라 아래쪽 완료 div로 이동 풀면 -> 다시 위로 이동
@@ -406,17 +450,56 @@ function App() {
                 <input
                   placeholder="작업 추가"
                   style={{ fontSize: `20px`, width: `100%`, height: `20%` }}
-                  value={detailInput}
-                  onChange={(e) => setDetailInput(e.target.value)}
+                  value={taskInput}
+                  onChange={(e) => setTaskInput(e.target.value)}
                   onKeyDown={(e) =>
                     e.keyCode === 13 &&
-                    insertTodoDetailHandler(detailInput, createDetailDiv.cateNo)
+                    insertTodoDetailHandler(taskInput, createDetailDiv.cateNo)
                   }
                 ></input>
               </div>
             </div>
           )}
         </div>
+
+        {createTaskDetailDiv && (
+          <div
+            style={{
+              flexDirection: `column`,
+              width: `30%`,
+              height: `100%`,
+              border: `1px solid #909090`,
+              padding: `10px`,
+              display: showTaskDetailFlag ? `initial` : `none`,
+            }}
+          >
+            마지막 상세 DIV
+            <div
+              style={{
+                display: `flex`,
+                flexDirection: `column`,
+                border: `1px solid #909090`,
+                height: `10%`,
+              }}
+            >
+              <button style={{ width: `30px`, height: `30px` }}>x</button>
+              <input
+                // value={detailInput}
+                value={createTaskDetailDiv.content}
+                style={{ fontSize: `20px` }}
+                onChange={(e) => {
+                  mdfyTaskContentHandler(
+                    createTaskDetailDiv.detailNo,
+                    createTaskDetailDiv.orderNo,
+                    e.target.value
+                  );
+                }}
+                /* 0926 이 부분 소스 확인 및 정리하고 삭제 등등 진행 */
+              />
+            </div>
+            <div>2번째</div>
+          </div>
+        )}
       </div>
     </>
   );
