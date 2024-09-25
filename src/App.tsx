@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 
-// 객체
+// cate TABLE
 type TData = {
   cateNo: string;
   title: string;
 };
 
-// detail TABLE
+// Task(detail) TABLE
 type DetailVO = {
   detailNo: string;
   cateNo: string;
@@ -19,11 +19,10 @@ type DetailVO = {
 };
 
 function App() {
-  // 타입 설정 및 배열인 경우에는 Tdata[] 이라고 명시해줌
   // 가상DB
   const [datum, setDatum] = useState<TData[]>([]); // 카테고리 DB
-  const [detailTable, setDetailTable] = useState<DetailVO[]>([]); // 작업 DB DB
-  const [selCateDetail, setSelCateDetail] = useState<DetailVO[]>([]); // 선택된 카테고리에 해당하는 작업만 select
+  const [detailTable, setDetailTable] = useState<DetailVO[]>([]); // TASK DB(DEtail DB)
+  const [selCateDetail, setSelCateDetail] = useState<DetailVO[]>([]); // 선택된 카테고리에 해당하는 Task만 select
 
   const [createDatum, setCreateDatum] = useState<TData[]>([]); // 엔터를 누르기 전까지는 input
   const [createInput, setCreateInput] = useState(''); // createInput 값 변경용
@@ -32,19 +31,44 @@ function App() {
 
   // task
   const [taskInput, setTaskInput] = useState(''); // 작업추가용 값
-
-  const [detailInput, setDetailInput] = useState(''); // detail수정용 값
   const [showTaskDetailFlag, setShowTaskDetailFlag] = useState(false); // true : 보임 / false : 안보임
   const [createTaskDetailDiv, setCreateTaskDetailDiv] =
     useState<DetailVO | null>(null);
 
-  // 작업내용 수정
+  // task 삭제
+  const deleteTaskHandler = useCallback(
+    (detailNo: String, orderNo: number) => {
+      let data = detailTable ? detailTable.map((value) => value) : [];
+      let selData = selCateDetail ? selCateDetail.map((value) => value) : [];
+
+      // taskDB 삭제
+      let dataDelIndex = data.findIndex(
+        (taskItem) =>
+          taskItem.detailNo === detailNo && taskItem.orderNo === orderNo
+      );
+      data.splice(dataDelIndex, 1);
+
+      // selectedTaskDB 삭제
+      let deleteIndex = selData.findIndex(
+        (taskItem) =>
+          taskItem.detailNo === detailNo && taskItem.orderNo == orderNo
+      );
+      selData.splice(deleteIndex, 1);
+
+      setDetailTable(data);
+      setSelCateDetail(selData);
+      setCreateTaskDetailDiv(null);
+    },
+    [detailTable]
+  );
+
+  // task 내용 수정
   const mdfyTaskContentHandler = useCallback(
     (detailNo: string, orderNo: number, content: string) => {
       let data = detailTable ? detailTable.map((value) => value) : [];
 
       for (let i = 0; i < data.length; i++) {
-        if (data[i].detailNo == detailNo && data[i].orderNo == orderNo) {
+        if (data[i].detailNo === detailNo && data[i].orderNo === orderNo) {
           data[i].content = content;
         }
       }
@@ -57,28 +81,17 @@ function App() {
 
   const showDetailHandler = useCallback(
     (detailNo: string, orderNo: number) => {
-      // 해당 detailNo와 orderNo가 매칭하는 데이터 골라서 상세에 넣기
-
       setCreateTaskDetailDiv(null);
 
       console.log('내가고른 task 정보 >> ', detailNo, ' , ', orderNo);
       let data = detailTable ? detailTable.map((value) => value) : [];
-      // let taskDetailVO = [];
 
-      for (let i = 0; i < data.length; i++) {
-        if (
-          detailTable[i].detailNo == detailNo &&
-          detailTable[i].orderNo == orderNo
-        ) {
-          // taskDetailVO.push(detailTable[i]);
-          setCreateTaskDetailDiv(detailTable[i]);
-        }
-      }
-
-      console.log('누른 detail상세 확인 >> ', createTaskDetailDiv);
-
-      // setDetailInput(taskDetailVO.)// 여기에 제목만 넣기
-
+      const detailVO =
+        data.find(
+          (taskItem) =>
+            taskItem.detailNo === detailNo && taskItem.orderNo === orderNo
+        ) || null;
+      setCreateTaskDetailDiv(detailVO);
       setShowTaskDetailFlag(true);
     },
     [detailTable, createTaskDetailDiv]
@@ -91,7 +104,7 @@ function App() {
       let selectedData = [];
 
       for (let i = 0; i < data.length; i++) {
-        if (data[i].cateNo == cateNo) {
+        if (data[i].cateNo === cateNo) {
           selectedData.push(data[i]);
         }
       }
@@ -110,13 +123,11 @@ function App() {
 
       // 현재 날짜와 시간을 가져오기
       let currentDate = new Date();
-      console.log('지금 날짜 >> ', currentDate);
-
       let detailNoStr = '';
 
       // 배열 없을 때는 length, 있을 때는 마지막 값의 +1 로 가져와야함
-      if (`${detailTable.length}` == '0') {
-        detailNoStr = `D` + `${datum.length + 1}`.padStart(3, '0');
+      if (`${detailTable.length}` === '0') {
+        detailNoStr = `D` + `${detailTable.length + 1}`.padStart(3, '0');
       } else {
         let lastDetailNo = `${
           detailTable[Number(`${detailTable.length}`) - 1].detailNo
@@ -125,24 +136,28 @@ function App() {
         detailNoStr = `D` + String(Number(lastDetailNo) + 1).padStart(3, '0');
       }
 
-      console.log('detailNoStr 확인 >> ', detailNoStr);
-
       // orderNo는 0번부터 시작하는데 cateNo로 등록 안되어있으면 0을 있으면 등록된 orderNo를 배열에 담ㅇ ㅏmax값 구하기.
       let orderNoInt = 0;
       // 배열 없을 때는 length, 있을 때는 마지막 값의 +1 로 가져와야함
-      if (`${detailTable.length}` == '0') {
+      if (`${detailTable.length}` === '0') {
         orderNoInt = 0;
       } else {
-        // cateNo 해당 orderNo만 담기
-        let cateNoArr = [];
-        for (let i = 0; i < data.length; i++) {
-          if (data[i].cateNo == cateNo) {
-            cateNoArr.push(data[i].orderNo);
+        console.log('arr담기 전 db확인>>', data);
+        let cateExist = data.some((taskItem) => taskItem.cateNo === cateNo);
+        let orderNoArr = [];
+
+        // cateNo 해당하는 task 데이터 있는 경우
+        if (cateExist == true) {
+          for (let i = 0; i < data.length; i++) {
+            if (data[i].cateNo === cateNo) {
+              orderNoArr.push(data[i].orderNo);
+            }
           }
+          orderNoInt = Math.max(...orderNoArr) + 1; // max + 1
+        } else {
+          orderNoInt = 0;
         }
-        orderNoInt = Math.max(...cateNoArr) + 1; // max + 1
       }
-      console.log('orderNoInt 확인 >> ', orderNoInt);
 
       if (content != null && content != '') {
         const newTask: DetailVO = {
@@ -158,12 +173,6 @@ function App() {
 
         data.push(newTask);
         selData.push(newTask);
-
-        /*
-          1. DetailDB
-          2. 해당 cateNo에 해당하는 detail만 select DB 필요
-          3. insert시 detailDB랑 해당 cateNo에 해당하는 select DB에도 값 insert 
-        */
       }
 
       console.log('detail DB data 객체 확인 >> ', data);
@@ -182,7 +191,7 @@ function App() {
       let data = datum ? datum.map((value) => value) : [];
 
       for (let i = 0; i < data.length; i++) {
-        if (data[i].cateNo == detailVO.cateNo) {
+        if (data[i].cateNo === detailVO.cateNo) {
           data[i].title = detailVO.title;
         }
       }
@@ -200,21 +209,26 @@ function App() {
       // 확인
       if (window.confirm('삭제하시겠습니까?')) {
         let data = datum ? datum.map((value) => value) : [];
+        let taskData = detailTable ? detailTable.map((value) => value) : [];
 
-        // data.splice(cateNo, 1); // 배열에서 idx 1개만 삭제한다.
-        if (data != null) {
-          for (let i = 0; i < data.length; i++) {
-            const arrCateNo = data[i].cateNo;
-            if (arrCateNo == cateNo) {
-              data.splice(i, 1);
-            }
+        for (let i = 0; i < data.length; i++) {
+          const arrCateNo = data[i].cateNo;
+          if (arrCateNo === cateNo) {
+            data.splice(i, 1);
           }
         }
+
+        // 삭제할 cateNo에 해당하는 TaskData 삭제처리 240925
+        if (taskData != null) {
+          let newTaskData = taskData.filter((task) => task.cateNo != cateNo);
+          setDetailTable(newTaskData);
+        }
+
         setDatum(data);
         setCreateDetailDiv(null); // 내용 div 삭제
       }
     },
-    [datum]
+    [datum, detailTable]
   );
 
   const showTaskHandler = useCallback(
@@ -225,10 +239,6 @@ function App() {
 
       // 선택된 db 초기화
       setSelCateDetail([]);
-      console.log(
-        '왼쪾 카테고리 div 선택 시 초기화 됏느지 확인 >> ',
-        selCateDetail
-      );
 
       setCreateDetailDiv(data);
       selectTaskHandler(data.cateNo);
@@ -255,7 +265,7 @@ function App() {
       setCreateFlag(false);
     },
     [datum]
-  ); // [datum] useCallback 쓰고 난 후에 값 저장해서 새값 가져오도록 하기
+  );
 
   // 생성
   const createHandler = useCallback(() => {
@@ -263,7 +273,7 @@ function App() {
     let data = createDatum ? createDatum.map((value) => value) : [];
 
     // 배열 없을 때는 length, 있을 때는 마지막 값의 +1 로 가져와야함
-    if (`${datum.length}` == '0') {
+    if (`${datum.length}` === '0') {
       data.push({
         // title: `이름 ${createDatum.length + 1}`,
         title: `이름 ${datum.length + 1}`,
@@ -405,7 +415,7 @@ function App() {
                   style={{ width: `10%` }}
                   onClick={() => deleteHandler(createDetailDiv.cateNo)}
                 >
-                  삭제{createDetailDiv.cateNo}
+                  삭제
                 </button>
               </div>
               <div style={{ height: `85%` }}>
@@ -426,12 +436,12 @@ function App() {
                         showDetailHandler(data.detailNo, data.orderNo)
                       }
                     >
-                      {/* 카테고리 삭제 시 detailDB에서도 cateNo해당 데이터 삭제
-                          checkbox 상태 변화 시 해당 cateNo YN -> Y로 변경 
+                      {/* 카테고리 삭제 시 detailDB에서도 cateNo해당 데이터 삭제(ㅇ)
                           div클릭 시 상세 div 오른쪽에서 등장 (ㅇ)
-                          오른쪽에서 내용 수정 
-                          오른쪽에서 삭제
-
+                          오른쪽에서 내용 수정 (ㅇ)
+                          오른쪽에서 삭제 (ㅇ)
+                          
+                          checkbox 상태 변화 시 해당 cateNo YN -> Y로 변경 
                           checkbox 변화에 따라 아래쪽 완료 div로 이동 풀면 -> 다시 위로 이동
 
                       */}
@@ -482,9 +492,13 @@ function App() {
                 height: `10%`,
               }}
             >
-              <button style={{ width: `30px`, height: `30px` }}>x</button>
+              <button
+                style={{ width: `30px`, height: `30px` }}
+                onClick={() => setCreateTaskDetailDiv(null)}
+              >
+                x
+              </button>
               <input
-                // value={detailInput}
                 value={createTaskDetailDiv.content}
                 style={{ fontSize: `20px` }}
                 onChange={(e) => {
@@ -497,7 +511,19 @@ function App() {
                 /* 0926 이 부분 소스 확인 및 정리하고 삭제 등등 진행 */
               />
             </div>
-            <div>2번째</div>
+            <div>
+              <button
+                style={{ marginLeft: `auto` }}
+                onClick={() =>
+                  deleteTaskHandler(
+                    createTaskDetailDiv.detailNo,
+                    createTaskDetailDiv.orderNo
+                  )
+                }
+              >
+                삭제
+              </button>
+            </div>
           </div>
         )}
       </div>
