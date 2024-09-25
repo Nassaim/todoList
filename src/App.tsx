@@ -242,6 +242,7 @@ function App() {
 
       setCreateDetailDiv(data);
       selectTaskHandler(data.cateNo);
+      setCreateTaskDetailDiv(null);
     },
     [datum, selCateDetail]
   );
@@ -275,8 +276,8 @@ function App() {
     // 배열 없을 때는 length, 있을 때는 마지막 값의 +1 로 가져와야함
     if (`${datum.length}` === '0') {
       data.push({
-        // title: `이름 ${createDatum.length + 1}`,
-        title: `이름 ${datum.length + 1}`,
+        // title: `이름 ${datum.length + 1}`,
+        title: `제목 없는 목록`,
         cateNo: `C` + `${datum.length + 1}`.padStart(3, '0'),
       });
     } else {
@@ -284,14 +285,16 @@ function App() {
       lastCateNo = lastCateNo.slice(-3, lastCateNo.length);
 
       data.push({
-        title: `이름 ${datum.length + 1}`,
+        // title: `이름 ${datum.length + 1}`,
+        title: `제목 없는 목록`,
         cateNo: `C` + String(Number(lastCateNo) + 1).padStart(3, '0'),
       });
     }
 
     // setDatum(data);
     setCreateDatum(data);
-    setCreateInput(`이름 ${datum.length + 1}`);
+    // setCreateInput(`이름 ${datum.length + 1}`);
+    setCreateInput(`제목 없는 목록`);
     setCreateFlag(true);
   }, [createDatum, datum]);
 
@@ -319,11 +322,13 @@ function App() {
           }}
         >
           {/* 카테고리 삽입 위치  */}
+          <strong>TODO LIST</strong>
           <div
             style={{
               height: `calc(100% - 50px - 10px)`,
               display: `flex`,
-              flexDirection: 'column',
+              flexDirection: `column`,
+
               justifyContent: 'flex-start',
             }}
           >
@@ -337,6 +342,7 @@ function App() {
                     width: `100%`,
                     border: `1px solid #808080`,
                     margin: `0 0 10px`,
+                    textAlign: `left`,
                   }}
                   // onClick={() => deleteHandler(idx)}
                   onClick={() => showTaskHandler(idx)}
@@ -357,14 +363,10 @@ function App() {
                     margin: `0 0 10px`,
                   }}
                 >
-                  {' '}
-                  createDatumDIV
                   {/* <input value={data.title} /> */}
                   <input
                     value={createInput}
-                    // onChange={(e) => console.log(e.target.value)}
                     onChange={(e) => setCreateInput(e.target.value)}
-                    // 엔터일 때 실행
                     onKeyDown={(e) =>
                       e.keyCode === 13 &&
                       dbCreateHandler(createInput, data.cateNo)
@@ -410,7 +412,6 @@ function App() {
                     });
                   }}
                 ></input>
-                <button style={{ width: `10%` }}>추가</button>
                 <button
                   style={{ width: `10%` }}
                   onClick={() => deleteHandler(createDetailDiv.cateNo)}
@@ -440,7 +441,7 @@ function App() {
                           div클릭 시 상세 div 오른쪽에서 등장 (ㅇ)
                           오른쪽에서 내용 수정 (ㅇ)
                           오른쪽에서 삭제 (ㅇ)
-                          
+
                           checkbox 상태 변화 시 해당 cateNo YN -> Y로 변경 
                           checkbox 변화에 따라 아래쪽 완료 div로 이동 풀면 -> 다시 위로 이동
 
@@ -480,40 +481,53 @@ function App() {
               height: `100%`,
               border: `1px solid #909090`,
               padding: `10px`,
-              display: showTaskDetailFlag ? `initial` : `none`,
+              display: showTaskDetailFlag ? `flex` : `none`,
+              justifyContent: `space-between`,
             }}
           >
-            마지막 상세 DIV
             <div
               style={{
                 display: `flex`,
                 flexDirection: `column`,
-                border: `1px solid #909090`,
                 height: `10%`,
               }}
             >
               <button
-                style={{ width: `30px`, height: `30px` }}
+                style={{ width: `30px`, height: `30px`, alignSelf: 'flex-end' }}
                 onClick={() => setCreateTaskDetailDiv(null)}
               >
                 x
               </button>
-              <input
-                value={createTaskDetailDiv.content}
-                style={{ fontSize: `20px` }}
-                onChange={(e) => {
-                  mdfyTaskContentHandler(
-                    createTaskDetailDiv.detailNo,
-                    createTaskDetailDiv.orderNo,
-                    e.target.value
-                  );
+              <div
+                style={{
+                  border: `1px solid #909090`,
+                  width: `100%`,
+                  height: `100px`,
                 }}
-                /* 0926 이 부분 소스 확인 및 정리하고 삭제 등등 진행 */
-              />
+              >
+                <input type="checkbox"></input>
+                <input
+                  value={createTaskDetailDiv.content}
+                  style={{ fontSize: `25px` }}
+                  onChange={(e) => {
+                    mdfyTaskContentHandler(
+                      createTaskDetailDiv.detailNo,
+                      createTaskDetailDiv.orderNo,
+                      e.target.value
+                    );
+                  }}
+                  /* 0926 이 부분 소스 확인 및 정리하고 삭제 등등 진행 */
+                />
+              </div>
             </div>
-            <div>
+            <div style={{ display: `flex` }}>
+              <span>
+                {' '}
+                {createTaskDetailDiv.regDate.toLocaleString()}에 생성됨
+              </span>
+              &nbsp;
               <button
-                style={{ marginLeft: `auto` }}
+                style={{ marginLeft: `auto`, alignSelf: 'flex-end' }}
                 onClick={() =>
                   deleteTaskHandler(
                     createTaskDetailDiv.detailNo,
